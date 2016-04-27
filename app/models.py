@@ -12,8 +12,8 @@ class Tile(Base):
     __tablename__ = 'tiles'
     id = Column(Integer, primary_key=True)
 
-    x = Column(Integer)
-    y = Column(Integer)
+    x = Column(Integer, index=True)
+    y = Column(Integer, index=True)
     temperature = Column(Float)
     precipitation = Column(Float)
     windspeed = Column(Float)
@@ -37,6 +37,9 @@ class Tile(Base):
     @property
     def adjacents(self):
         return [self.nw, self.n, self.ne, self.e, self.se, self.s, self.sw, self.w]
+
+    def __repr__(self):
+        return '<Tile id: %s, coord: (%s,%s)>' % (self.id, self.x, self.y)
 
 
 Base.metadata.create_all(engine)
