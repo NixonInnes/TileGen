@@ -1,7 +1,6 @@
 from . import session
 from .models import Tile
 from random import uniform
-from queue import Queue
 
 
 def make_zero():
@@ -15,6 +14,8 @@ def make_zero():
         )
         session.add(tile)
         session.commit()
+        return tile
+    return None
 
 
 def generate_around(start):
@@ -40,7 +41,6 @@ def generate_around(start):
             precipitation=start.precipitation * (1+uniform(-0.1, 0.1)),
             windspeed=start.windspeed * (1+uniform(-0.1, 0.1))
         )
-
         start.n = n
         n.w = start.nw
         n.e = start.ne
@@ -128,12 +128,20 @@ def generate_around(start):
     return new_tiles
 
 
-def generate_plane(start, max_tiles=10000):
-    q = Queue()
-    for tile in session.query(Tile).all():
-        q.put(tile)
-    while not q.empty() and session.query(Tile).count() < max_tiles:
-        tile = q.get()
+def generate_plane(max_tiles=10000):
+    if session.query(Tile).count() is 0:
+        make_zero()
+    q = session.query(Tile).all()
+    while True:
+        if session.query(Tile).count() >= max_tiles:
+            break
+        tile = q.pop(0)
         new_tiles = generate_around(tile)
-        for new_tile in new_tiles:
-            q.put(new_tile)
+        q += new_tiles
+
+
+def print_coords():
+    tiles = session.query(Tile).all()
+    with open('coords.txt', 'w') as file:
+        for tile in tiles:
+            file.write('(%s,%s)\n' % tile.coord)
