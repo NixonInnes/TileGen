@@ -21,7 +21,7 @@ def make_zero():
 
 
 def generate_around(start):
-    compass = [
+    compass = (
         ('nw', -1, 1),
         ('n', 0, 1),
         ('ne', 1, 1),
@@ -30,7 +30,7 @@ def generate_around(start):
         ('sw', -1, -1),
         ('s', 0, -1),
         ('se', 1, -1)
-    ]
+    )
     new_tiles = []
     for point, xmod, ymod in compass:
         if getattr(start, point) is None:
