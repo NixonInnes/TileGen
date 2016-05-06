@@ -2,10 +2,14 @@ from sqlalchemy import Column, Integer, Float, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import create_engine
+from collections import namedtuple
 
 engine = create_engine('sqlite:///db.sqlite')
 
 Base = declarative_base()
+
+
+Point = namedtuple('Point', ['x', 'y'])
 
 
 class Tile(Base):
@@ -32,15 +36,21 @@ class Tile(Base):
 
     @property
     def coord(self):
-        return tuple([self.x, self.y])
+        return Point(self.x, self.y)
 
     @property
     def adjacents(self):
-        return [self.nw, self.n, self.ne, self.e, self.se, self.s, self.sw, self.w]
+        return {'nw': self.nw,
+                'n': self.n,
+                'ne': self.ne,
+                'e': self.e,
+                'se': self.se,
+                's': self.s,
+                'sw': self.sw,
+                'w': self.w}
 
     def __repr__(self):
         return '<Tile id: %s, coord: (%s,%s)>' % (self.id, self.x, self.y)
 
 
 Base.metadata.create_all(engine)
-
