@@ -1,20 +1,30 @@
-from sqlalchemy import Column, Integer, Float, ForeignKey
+from sqlalchemy import Column, Integer, Float, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import create_engine
 from collections import namedtuple
 
 engine = create_engine('sqlite:///db.sqlite')
-
 Base = declarative_base()
-
-
 Point = namedtuple('Point', ['x', 'y'])
+
+
+class Plane(Base):
+    __tablename__ = 'planes'
+    id = Column(Integer, primary_key=True)
+
+    name = Column(String)
+
+    def __repr__(self):
+        return '<Plane id: %s>' % self.id
 
 
 class Tile(Base):
     __tablename__ = 'tiles'
     id = Column(Integer, primary_key=True)
+
+    _plane = Column(Integer, ForeignKey('planes.id'))
+    plane = relationship
 
     x = Column(Integer, index=True)
     y = Column(Integer, index=True)
