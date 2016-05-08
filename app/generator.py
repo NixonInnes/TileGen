@@ -16,7 +16,7 @@ COMPASS = {
 }
 
 
-def make_origin(temperature=25, precipitation=80, windspeed=5):
+def get_origin(temperature=25, precipitation=80, windspeed=5):
     if len(session.query(Tile).all()) is 0:
         tile = Tile(
             x=0,
@@ -91,7 +91,7 @@ def generate_around(start, max_tiles=None):
 
 def generate_plane(max_tiles=10000):
     if session.query(Tile).count() is 0:
-        make_origin()
+        get_origin()
     q = deque()
     q.extend(session.query(Tile).all())
     while session.query(Tile).count() < max_tiles:

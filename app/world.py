@@ -1,55 +1,34 @@
-import time
 from random import uniform, randint
-from threading import Thread
+import asyncio
 
-
-class Ticker(Thread):
-    def __init__(self, sleep, func):
-        self.sleep = sleep
-        self.func = func
-        super().__init__(name='Ticker')
-        self.setDaemon(True)
-
-    def run(self):
-        while True:
-            time.sleep(self.sleep)
-            self.func()
+from app.generator import get_origin
 
 
 class World(object):
     def __init__(self):
         self.hamsters = []
+        self.loop = asyncio.get_event_loop()
 
-        self.tick_queue = []
-        self.tick_count = 0
-        self.ticker = Ticker(1, self.do_tick)
-        self.ticker.start()
+    def start(self):
+        try:
+            self.loop.run_forever()
+        except KeyboardInterrupt:
+            self.loop.stop()
+        finally:
+            self.loop.close()
 
-    def do_tick(self):
-        tick_gen = ((func, args, interval, repeat) for func, args, interval, repeat
-                    in self.tick_queue if self.tick_count % interval is 0)
-        for tick in tick_gen:
-            func, args, interval, repeat = tick
-            if args:
-                func(**args)
-            else:
-                func()
-            if not repeat:
-                self.tick_queue.remove(tick)
-        self.tick_count += 1
-
-    def add_tick(self, func, args, interval, repeat=True):
-        self.tick_queue.append((func, args, interval, repeat))
-
-    def add_hamster(self, tile):
-        hamster = Hamster(tile)
+    def add_hamster(self):
+        hamster = Hamster(len(self.hamsters))
         self.hamsters.append(hamster)
-        self.add_tick(hamster.move, None, int(hamster.dex/2))
+        asyncio.Task(hamster.move())
 
 
 class Hamster(object):
-    def __init__(self, tile):
-        self.tile = tile
+    def __init__(self, name):
+        self.name = name
+        self.tile = get_origin()
+        self.tile_history = []
+        self.sex = randint(0, 1)
         self.pref_temp = 25 * (1 + uniform(-0.5, 0.5))
         self.pref_prec = 80 * (1 + uniform(-0.5, 0.5))
         self.pref_wind = 5 * (1 + uniform(-0.5, 0.5))
@@ -65,10 +44,17 @@ class Hamster(object):
         wind_level = abs(self.pref_wind - tile.windspeed)/self.pref_wind
         return int(((temp_level + prec_level + wind_level)/3)*100)
 
+    @asyncio.coroutine
     def move(self):
-        if self.happiness > 99:
+        if self.happiness > 90:
             return
-        adj_hap = {dir_: self.calc_happiness(tile) for dir_, tile in self.tile.adjacents.items()}
-        self.tile = self.tile.adjacents[min(adj_hap, key=adj_hap.get)]
-
-
+        adj_hap = {dir_: self.calc_happiness(tile) for dir_, tile in self.tile.adjacents.items()
+                   if tile is not None and tile not in self.tile_history}
+        self.tile_history.append(self.tile)
+        if len(self.tile_history) > 3:
+            self.tile_history.pop(0)
+        self.tile = self.tile.adjacents[max(adj_hap, key=adj_hap.get)]
+        self.happiness = self.calc_happiness(self.tile)
+        print("Hamster %s moved to tile (%s,%s)" % (self.name, self.tile.x, self.tile.y))
+        yield from asyncio.sleep(25 - self.dex)
+        asyncio.Task(self.move())
